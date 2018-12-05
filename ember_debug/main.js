@@ -58,8 +58,8 @@ const EmberDebug = EmberObject.extend({
       this.reset($keepAdapter);
       return;
     }
-    if (!this.get('_application') && !this.get('isTesting')) {
-      this.set('_application', getApplication());
+    if (!this.get('_applications') && !this.get('isTesting')) {
+      this.set('_applications', [getApplication()]);
     }
     this.set('started', true);
 
@@ -105,7 +105,7 @@ const EmberDebug = EmberObject.extend({
 
   reset($keepAdapter) {
     if (!this.get('isTesting') && !this.get('owner')) {
-      this.set('owner', getOwner(this.get('_application')));
+      this.set('owner', getOwner(this.get('_applications')[0]));
     }
     this.destroyContainer();
     run(() => {
@@ -143,7 +143,7 @@ const EmberDebug = EmberObject.extend({
 
   clear() {
     this.setProperties({
-      '_application': null,
+      '_applications': null,
       owner: null
     });
   }

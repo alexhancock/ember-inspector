@@ -75,8 +75,18 @@ var EMBER_VERSIONS_SUPPORTED = {{EMBER_VERSIONS_SUPPORTED}};
               return this._super.apply(this, arguments);
             }
           });
+
+          let apps = Ember.EmberInspectorDebugger.get('_applications');
+
+          // WIP
+          if (!apps || !apps.length) {
+            apps = [app];
+          } else {
+            apps.push(app);
+          }
+
           // Boot the inspector (or re-boot if already booted, for example in tests)
-          Ember.EmberInspectorDebugger.set('_application', app);
+          Ember.EmberInspectorDebugger.set('_applications', apps);
           Ember.EmberInspectorDebugger.set('owner', instance);
           Ember.EmberInspectorDebugger.start(true);
         }
@@ -129,7 +139,7 @@ var EMBER_VERSIONS_SUPPORTED = {{EMBER_VERSIONS_SUPPORTED}};
           // App started
           setupInstanceInitializer(app, callback);
           callback(instance);
-          break;
+          // break;
         }
       }
     }
