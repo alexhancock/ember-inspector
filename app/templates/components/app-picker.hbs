@@ -1,0 +1,8 @@
+<div class="dropdown">
+  <select class="dropdown__select" onchange={{action "selectApp" value="target.value"}}>
+    {{#each apps as |app|}}
+      <option value={{app.name}} selected={{eq app.name selectedApp}}>{{app.name}}</option>
+    {{/each}}
+  </select>
+  {{svg-jar "dropdown-arrow" class="dropdown__arrow"}}
+</div>

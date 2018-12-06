@@ -24,6 +24,7 @@ var EMBER_VERSIONS_SUPPORTED = {{EMBER_VERSIONS_SUPPORTED}};
 (function(adapter) {
   var onReady = requireModule('ember-debug/utils/on-ready').onReady;
   var compareVersion = requireModule('ember-debug/utils/version').compareVersion;
+  const appInstances = [];
 
   onEmberReady(function() {
     // global to prevent injection
@@ -50,6 +51,8 @@ var EMBER_VERSIONS_SUPPORTED = {{EMBER_VERSIONS_SUPPORTED}};
       Ember.EmberInspectorDebugger.Adapter = requireModule('ember-debug/adapters/' + adapter)['default'];
 
       onApplicationStart(function appStarted(instance) {
+        appInstances.pushObject(instance);
+
         let app = instance.application;
         if (!('__inspector__booted' in app)) {
           app.__inspector__booted = true;
@@ -75,14 +78,19 @@ var EMBER_VERSIONS_SUPPORTED = {{EMBER_VERSIONS_SUPPORTED}};
               return this._super.apply(this, arguments);
             }
           });
-          // Boot the inspector (or re-boot if already booted, for example in tests)
-          Ember.EmberInspectorDebugger.set('_application', app);
-          Ember.EmberInspectorDebugger.set('owner', instance);
-          Ember.EmberInspectorDebugger.start(true);
+
+          bootEmberInspector(instance);
         }
       });
     }
   });
+
+  function bootEmberInspector(appInstance) {
+    // Boot the inspector (or re-boot if already booted, for example in tests)
+    Ember.EmberInspectorDebugger.set('_application', appInstance.application);
+    Ember.EmberInspectorDebugger.set('owner', appInstance);
+    Ember.EmberInspectorDebugger.start(true);
+  }
 
   function onEmberReady(callback) {
     var triggered = false;
@@ -117,6 +125,32 @@ var EMBER_VERSIONS_SUPPORTED = {{EMBER_VERSIONS_SUPPORTED}};
     if (typeof Ember === 'undefined') {
       return;
     }
+
+    const adapterInstance = requireModule('ember-debug/adapters/' + currentAdapter)['default'].create();
+    adapterInstance.onMessageReceived(function(message) {
+      if (message.type !== 'app-picker-loaded') {
+        return;
+      }
+
+      const currentApp = Ember.EmberInspectorDebugger._application;
+
+      sendAppList(adapterInstance, getApplications().map(({ name, rootElement }) => {
+        return { name };
+      }));
+    });
+
+    adapterInstance.onMessageReceived(function(message) {
+      if (message.type !== 'app-selected') {
+        return;
+      }
+
+      const appInstance = appInstances.find(appInstance => appInstance.application.name === message.appName);
+
+      if (appInstance) {
+        bootEmberInspector(appInstance);
+      }
+    });
+
     var apps = getApplications();
     var app;
     for (var i = 0, l = apps.length; i < l; i++) {
@@ -188,6 +222,14 @@ var EMBER_VERSIONS_SUPPORTED = {{EMBER_VERSIONS_SUPPORTED}};
         from: 'inspectedWindow'
       });
     }
+  }
+
+  function sendAppList(adapter, appList) {
+    adapter.sendMessage({
+      type: 'app-list',
+      appList,
+      from: 'inspectedWindow'
+    });
   }
 
   /**

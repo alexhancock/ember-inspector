@@ -9,17 +9,20 @@ export default EmberObject.extend(Evented, {
   }),
 
   init() {
-    const detectedApplications = this.get('detectedApplications');
+    this.get('adapter').onMessageReceived(message => {
+      if (message.type !== 'app-list') {
+        return;
+      }
+
+      this.set('detectedApplications', message.appList.mapBy('name'));
+    });
+
     this.get('adapter').onMessageReceived(message => {
       if (!message.applicationId) {
         return;
       }
       if (!this.get('applicationId')) {
         this.set('applicationId', message.applicationId);
-      }
-      // save list of application ids
-      if (detectedApplications.indexOf(message.applicationId) === -1) {
-        detectedApplications.pushObject(message.applicationId);
       }
 
       const applicationId = this.get('applicationId');
