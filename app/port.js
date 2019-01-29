@@ -6,6 +6,12 @@ export default EmberObject.extend(Evented, {
   applicationName: undefined,
 
   init() {
+    const addIfNotPresent = (list, value) => {
+      if (list.indexOf(value) === -1) {
+        list.pushObject(value);
+      }
+    };
+
     this._super(...arguments);
 
     /*
@@ -16,6 +22,11 @@ export default EmberObject.extend(Evented, {
 
     this.get('adapter').onMessageReceived(message => {
       const { applicationId, applicationName } = message;
+
+      if (message.type === 'app-list') {
+        message.appList.forEach(app => addIfNotPresent(this.detectedApplications, app));
+        return;
+      }
 
       if (!applicationId) {
         return;
