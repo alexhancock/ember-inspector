@@ -134,12 +134,37 @@ var EMBER_VERSIONS_SUPPORTED = {{EMBER_VERSIONS_SUPPORTED}};
     const adapterInstance = requireModule('ember-debug/adapters/' + currentAdapter)['default'].create();
 
     adapterInstance.onMessageReceived(function(message) {
-      if (message.type === 'app-selected') {
-        const appInstance = getApplications().find(app => app.name === message.applicationId);
+      if (message.type !== 'app-picker-loaded') {
+        return;
+      }
 
-        if (appInstance && appInstance.__deprecatedInstance__) {
-          bootEmberInspector(appInstance.__deprecatedInstance__);
-        }
+      const appList = getApplications()
+        .map(app => {
+          if (!app){
+            return false;
+          }
+
+          return {
+            applicationName: app.name || 'app',
+            applicationId: Ember.guidFor(app)
+          }
+        })
+        .filter(obj => obj !== false);
+
+      console.log({ appList });
+
+      sendAppList(adapterInstance, appList);
+    });
+
+    adapterInstance.onMessageReceived(function(message) {
+      if (message.type !== 'app-selected') {
+        return;
+      }
+
+      const appInstance = getApplications().find(app => Ember.guidFor(app) === message.applicationId);
+
+      if (appInstance && appInstance.__deprecatedInstance__) {
+        bootEmberInspector(appInstance.__deprecatedInstance__);
       }
     });
 
@@ -216,8 +241,16 @@ var EMBER_VERSIONS_SUPPORTED = {{EMBER_VERSIONS_SUPPORTED}};
     }
   }
 
+  function sendAppList(adapter, appList) {
+    adapter.sendMessage({
+      type: 'app-list',
+      appList,
+      from: 'inspectedWindow'
+    });
+  }
+
   /**
-   * Checksi if a version is between two different versions.
+   * Checks if a version is between two different versions.
    * version should be >= left side, < right side
    *
    * @param {String} version1

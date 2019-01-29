@@ -15,7 +15,7 @@ export default EmberObject.extend(Ember.Evented, {
   now: computed(() => Date.now()),
 
   /**
-   * Unique id per applciation (not application instance). It's very important
+   * Unique id per application (not application instance). It's very important
    * that this id doesn't change when the app is reset otherwise the inspector
    * will no longer recognize the app.
    *
